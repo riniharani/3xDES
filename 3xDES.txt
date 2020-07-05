@@ -1,0 +1,204 @@
+using System;
+using System.Security.Cryptography;
+using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+
+
+namespace DesF
+{
+    
+    public partial class MainWindow : Window
+    {
+        public MainWindow()
+        {
+            InitializeComponent();
+        }
+
+        #region Encryption
+        public static byte[] EncryptToDesBytes(byte[] encryptBytes, byte[] keyBytes,
+           CipherMode cipher = CipherMode.ECB, PaddingMode padding = PaddingMode.Zeros)
+        {
+            var des = new DESCryptoServiceProvider
+            {
+                Key = keyBytes,
+                Mode = cipher,
+                Padding = padding
+            };
+
+            var outputBytes = des.CreateEncryptor().TransformFinalBlock(encryptBytes, 0, encryptBytes.Length);
+
+            return outputBytes;
+        }
+
+        public static string EncryptFromStringToHex(string encryptString, string encryptKey, Encoding encoding,
+           CipherMode cipher = CipherMode.ECB, 
+           PaddingMode padding = PaddingMode.Zeros)
+        {
+
+            var keyBytes = encoding.GetBytes(encryptKey);
+            var inputBytes = encoding.GetBytes(encryptString);
+            var outputBytes = EncryptToDesBytes(inputBytes, keyBytes, cipher, padding);
+            var sBuilder = new StringBuilder();
+            foreach (var b in outputBytes)
+            {
+                sBuilder.Append(b.ToString("X2"));
+
+            }
+            return sBuilder.ToString();
+
+        }
+
+        public static string EncryptFromHexToHex(string decryptString, string decryptKey, Encoding encoding,
+           CipherMode cipher = CipherMode.ECB, PaddingMode padding = PaddingMode.Zeros)
+        {
+
+            var keyBytes = encoding.GetBytes(decryptKey);
+
+            //Decrypted data is in Hex string format 
+            //Convert Decrypted data to Byte
+            var inputBytes = new byte[decryptString.Length / 2];
+            for (var i = 0; i < inputBytes.Length; i++)
+            {
+                inputBytes[i] = Convert.ToByte(decryptString.Substring(i * 2, 2), 16);
+            }
+            var outputBytes = EncryptToDesBytes(inputBytes, keyBytes, cipher, padding);
+            //return encoding.GetString(outputBytes).TrimEnd('\0');
+            var sBuilder = new StringBuilder();
+            foreach (var b in outputBytes)
+            {
+                sBuilder.Append(b.ToString("X2"));
+
+            }
+
+            //return data in Hex form 
+            return sBuilder.ToString();
+        }
+
+        #endregion
+        //-------------------------------------------------------------------------------------------------------------
+
+        #region Decryption
+
+        public static byte[] DecryptByDesBytes(byte[] decryptBytes, byte[] keyBytes,
+                         CipherMode cipher = CipherMode.ECB, 
+                         PaddingMode padding = PaddingMode.Zeros)
+        {
+            var des = new DESCryptoServiceProvider
+            {
+                Key = keyBytes,
+                Mode = cipher,
+                Padding = padding
+            };
+            var outputBytes = des.CreateDecryptor().TransformFinalBlock(decryptBytes, 0, decryptBytes.Length);
+            return outputBytes;
+        }
+
+        public static string DecryptByHexStringToHex(string decryptString, string decryptKey, Encoding encoding,
+            CipherMode cipher = CipherMode.ECB, PaddingMode padding = PaddingMode.Zeros)
+        {
+
+            var keyBytes = encoding.GetBytes(decryptKey);
+            var inputBytes = new byte[decryptString.Length / 2];
+            for (var i = 0; i < inputBytes.Length; i++)
+            {
+                inputBytes[i] = Convert.ToByte(decryptString.Substring(i * 2, 2), 16);
+            }
+            var outputBytes = DecryptByDesBytes(inputBytes, keyBytes, cipher, padding);
+            //return encoding.GetString(outputBytes).TrimEnd('\0');
+            var sBuilder = new StringBuilder();
+            foreach (var b in outputBytes)
+            {
+                sBuilder.Append(b.ToString("X2"));
+
+            }
+            return sBuilder.ToString();
+        }
+
+        public static string DecryptByHexStringToString(string decryptString, string decryptKey, Encoding encoding,
+            CipherMode cipher = CipherMode.ECB, PaddingMode padding = PaddingMode.Zeros)
+        {
+
+            var keyBytes = encoding.GetBytes(decryptKey);
+            var inputBytes = new byte[decryptString.Length / 2];
+            for (var i = 0; i < inputBytes.Length; i++)
+            {
+                inputBytes[i] = Convert.ToByte(decryptString.Substring(i * 2, 2), 16);
+            }
+            var outputBytes = DecryptByDesBytes(inputBytes, keyBytes, cipher, padding);
+            return encoding.GetString(outputBytes).TrimEnd('\0');
+
+        }
+
+
+        #endregion
+
+
+
+
+
+
+
+        private void Button_Click(object sender, RoutedEventArgs e)//button proses D1
+        {
+            byte[] keyBytes = { 0x61, 0x6c, 0x70, 0x68, 0x61, 0x40, 0x31, 0x32 };
+            string key = Encoding.ASCII.GetString(keyBytes);
+            var ciphertext = EncryptFromStringToHex(txtMsg.Text, key, Encoding.UTF8);
+            txtDes1.Text = ciphertext;
+        }
+
+        private void BtnSecond_Click_1(object sender, RoutedEventArgs e) //button proses D2
+        {
+            byte[] keyBytes = { 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x40, 0x31, 0x32 };
+            string key = Encoding.ASCII.GetString(keyBytes);
+            var ciphertext = DecryptByHexStringToHex(txtDes1.Text, key, Encoding.UTF8);
+            txtDes2.Text = ciphertext;
+
+            var ciphertext1 = DecryptByHexStringToString(txtDes1.Text, key, Encoding.UTF8);
+            txtDes2String.Text = ciphertext1;
+        }
+
+        private void BtnThird_Click_1(object sender, RoutedEventArgs e)//button proses D3
+        {
+            byte[] keyBytes = { 0x62, 0x65, 0x74, 0x61, 0x40, 0x31, 0x32, 0x33 };///key3
+            string key = Encoding.ASCII.GetString(keyBytes);
+            var ciphertext = EncryptFromHexToHex(txtDes2.Text, key, Encoding.UTF8);
+            txtDes3.Text = ciphertext;
+        }
+
+        private void BtnReverse1_Click_1(object sender, RoutedEventArgs e)//button proses R1
+        {
+
+            byte[] keyBytes = { 0x62, 0x65, 0x74, 0x61, 0x40, 0x31, 0x32, 0x33 }; //key3
+            string key = Encoding.ASCII.GetString(keyBytes);
+            var ciphertext = DecryptByHexStringToHex(txtDes3.Text, key, Encoding.UTF8);
+            txtReverse1.Text = ciphertext;
+        }
+
+        private void BtnReverse2_Click_1(object sender, RoutedEventArgs e) //button proses R2
+        {
+            byte[] keyBytes = { 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x40, 0x31, 0x32 };//key2
+            string key = Encoding.ASCII.GetString(keyBytes);
+            var ciphertext = EncryptFromHexToHex(txtReverse1.Text, key, Encoding.UTF8);
+            txtReverse2.Text = ciphertext;
+        }
+
+        private void BtnReverse3_Click_1(object sender, RoutedEventArgs e) //button proses R3
+        {
+            byte[] keyBytes = { 0x61, 0x6c, 0x70, 0x68, 0x61, 0x40, 0x31, 0x32 }; //key1
+            string key = Encoding.ASCII.GetString(keyBytes);
+            var ciphertext = DecryptByHexStringToString(txtReverse2.Text, key, Encoding.UTF8);
+            txtDecrypt.Text = ciphertext;
+        }
+
+        private void BtnClear_Click_1(object sender, RoutedEventArgs e)//Kosongkan
+        {
+            txtMsg.Text = txtDes1.Text = txtDes2.Text = txtDes2String.Text = txtDes3.Text = txtDecrypt.Text = " ";
+        }
+
+        private void TxtDes2_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+        }
+    }
+}
